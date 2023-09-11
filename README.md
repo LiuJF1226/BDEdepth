@@ -45,7 +45,7 @@ We experiment with PyTorch 1.9.1, CUDA 11.1, Python 3.7. Other torch versions ma
 
 ## Preparing datasets
 
-For KITTI dataset, you can prepare them as done in the [Monodepth2](https://github.com/nianticlabs/monodepth2). Note that we directly train with the raw png images and do not convert them to jpgs. You also need to generate the groundtruth depth maps before training since the code will evaluate after each epoch. For the  groundtruth, run the following commands:
+For KITTI dataset, you can prepare them as done in [Monodepth2](https://github.com/nianticlabs/monodepth2). Note that we directly train with the raw png images and do not convert them to jpgs. You also need to generate the groundtruth depth maps before training since the code will evaluate after each epoch. For the  groundtruth, run the following commands:
 ```shell
 ### generate raw groundtruth
 python export_gt_depth.py --data_path /home/datasets/kitti_raw_data --split eigen
@@ -59,12 +59,18 @@ For NYUv2 dataset, you can download the training and testing datasets as done in
 For Make3D dataset, you can download it from [here](http://make3d.cs.cornell.edu/data.html#make3d).
 
 ## Weights
-You can download model weights in this [link](), including two checkpoint files:
+You can download model weights in this [link](https://www.dropbox.com/scl/fo/0zeefm9e4kv0fzumqp490/h?rlkey=ev09rshvarnoyj9kr1qymkppl&dl=0), including two checkpoint files:
 * Pretrained HRNet18 on ImageNet:   `HRNet_W18_C_cosinelr_cutmix_300epoch.pth.tar` 
-* Our final model (640x192) using HRNet18 backone: `final_hrnet18_640x192.pth`
+* Our final KITTI model (640x192) using HRNet18 backone: `final_hrnet18_640x192.pth`
 
 ## Training
 Before training, move the pretrained HRNet18 weights, `HRNet_W18_C_cosinelr_cutmix_300epoch.pth.tar`, to the folder `BDEdepth/hrnet_IN_pretrained`.
+
+```shell
+cd /path/to/BDEdepth
+mkdir hrnet_IN_pretrained
+mv /path/to/HRNet_W18_C_cosinelr_cutmix_300epoch.pth.tar ./hrnet_IN_pretrained
+```
 
 And you can see the training scripts in [run_kitti.sh](./run_kitti.sh) and [run_nyu.sh](./run_nyu.sh). Take the KITTI script as an example:
 ```shell
