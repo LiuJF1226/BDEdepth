@@ -132,7 +132,7 @@ Look at [options.py](./options.py) to see the range of other training options.
 
 
 ## Evaluation
-You can see the evaluation scripts in [evaluate.sh](./evaluate.sh). 
+You can see the evaluation script in [evaluate.sh](./evaluate.sh). 
 
 ```shell
 CUDA_VISIBLE_DEVICES=0 python evaluate_depth.py \
