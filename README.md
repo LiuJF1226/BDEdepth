@@ -2,7 +2,7 @@
   
 # BDEdepth
 **Towards Better Data Exploitation In Self-Supervised Monocular Depth Estimation**
-  [[paper link]]()
+  [[paper link]](https://arxiv.org/abs/2309.05254)
   
   Jinfeng Liu, Lingtong Kong, Jie Yang, Wei Liu
 
@@ -27,7 +27,14 @@ Todo:
 If you find our work useful in your research please consider citing our paper:
 
 ```
-
+@misc{liu2023better,
+      title={Towards Better Data Exploitation In Self-Supervised Monocular Depth Estimation}, 
+      author={Jinfeng Liu and Lingtong Kong and Jie Yang and Wei Liu},
+      year={2023},
+      eprint={2309.05254},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
 ```
 
 
