@@ -174,6 +174,6 @@ python test_video.py --image_path folder --pretrained_path ./final_hrnet18_640x1
 ```
 Here the `--image_path` flag should be a directory containing several video frames. Note that these video frame files should be named in an ascending numerical order. For example, the first frame is named as `0000.png`, the second frame is named as `0001.png`, and etc. Then the script will output a GIF file.
 
-# Acknowledgement
+## Acknowledgement
 We have used codes from other wonderful open-source projects,
 [Monodepth2](https://github.com/nianticlabs/monodepth2), [StructDepth](https://github.com/SJTU-ViSYS/StructDepth), [PlaneDepth](https://github.com/svip-lab/PlaneDepth), [RA-Depth](https://github.com/hmhemu/RA-Depth). Thanks for their excellent works!
