@@ -666,26 +666,20 @@ class Trainer:
         return reprojection_loss
 
 
-    def compute_SI_log_depth_loss(self, pred, target, mask=None, lamda=0.5, scale_invariant=True):
+    def compute_SI_log_depth_loss(self, pred, target, mask=None, lamda=0.5):
         # B*1*H*W  ->  B*H*W
-        if not mask:
+        if mask is None:
             mask = torch.ones_like(pred).to(self.device)
 
-        # depth_diff = (pred - target).abs() / (pred + target) * mask
-        # loss = depth_diff[:, 0].sum(1).sum(1) / mask[:, 0].sum(1).sum(1)
-
         mask = mask[:, 0] 
-        log_pred = torch.log(pred[:, 0]) * mask
-        log_tgt = torch.log(target[:, 0]) * mask
-
-        if scale_invariant:
-            log_diff = log_pred - log_tgt
-            valid_num = mask.sum(1).sum(1) + 1e-8
-            log_diff_squre_sum = (log_diff ** 2).sum(1).sum(1)
-            log_diff_sum_squre = (log_diff.sum(1).sum(1)) ** 2
-            loss = log_diff_squre_sum/valid_num - lamda*log_diff_sum_squre/(valid_num**2)
-        else:
-            loss = torch.abs(log_tgt-log_pred).sum(1).sum(1) / (mask.sum(1).sum(1) + 1e-8)
+        log_pred = torch.log(pred[:, 0]+1e-8) * mask
+        log_tgt = torch.log(target[:, 0]+1e-8) * mask
+     
+        log_diff = log_pred - log_tgt
+        valid_num = mask.sum(1).sum(1) + 1e-8
+        log_diff_squre_sum = (log_diff ** 2).sum(1).sum(1)
+        log_diff_sum_squre = (log_diff.sum(1).sum(1)) ** 2
+        loss = log_diff_squre_sum/valid_num - lamda*log_diff_sum_squre/(valid_num**2)
 
         return loss.mean()
 
