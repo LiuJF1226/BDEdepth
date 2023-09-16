@@ -634,7 +634,9 @@ class Trainer:
                     gx0 = (inputs[("grid_local")][:, 0, 0, -1] + inputs[("grid_local")][:, 0, 0, 0]) / 2.
                     gy0 = (inputs[("grid_local")][:, 1, -1, 0] + inputs[("grid_local")][:, 1, 0, 0]) / 2.
                     f = (inputs[("grid_local")][:, 0, 0, -1] - inputs[("grid_local")][:, 0, 0, 0]) / 2.
-                    Rc_v = torch.stack([-gx0/(2*0.58), -gy0/(2*1.92), f], dim=1)
+                    fx = inputs[("K", 0)][0, 0, 0] / self.opt.width
+                    fy = inputs[("K", 0)][0, 1, 1] / self.opt.height
+                    Rc_v = torch.stack([-gx0/(2*fx), -gy0/(2*fy), f], dim=1)
                     Rc = torch.eye(3).to(self.device)
                     Rc = Rc[None, :, :].repeat(Rc_v.shape[0], 1, 1)
                     Rc[:, :, 2] = Rc_v
