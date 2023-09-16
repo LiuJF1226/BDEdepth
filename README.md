@@ -52,14 +52,12 @@ We experiment with PyTorch 1.9.1, CUDA 11.1, Python 3.7. Other torch versions ma
 
 ## Preparing datasets
 
-For KITTI dataset, you can prepare them as done in [Monodepth2](https://github.com/nianticlabs/monodepth2). Note that we directly train with the raw png images and do not convert them to jpgs. You also need to generate the groundtruth depth maps before training since the code will evaluate after each epoch. For the  groundtruth, run the following commands:
+For KITTI dataset, you can prepare them as done in [Monodepth2](https://github.com/nianticlabs/monodepth2). Note that we directly train with the raw png images and do not convert them to jpgs. You also need to generate the groundtruth depth maps before training since the code will evaluate after each epoch. For the raw groundtruth (`eigen` eval split), run the following commands:
 ```shell
 ### generate raw groundtruth
 python export_gt_depth.py --data_path /home/datasets/kitti_raw_data --split eigen
-
-### generate improved groundtruth
-python export_gt_depth.py --data_path /home/datasets/kitti_raw_data --split eigen_benchmark
 ```
+For the improved groundtruth (`eigen_benchmark` eval split), you can directly download it in this [link](https://www.dropbox.com/scl/fi/dg7eskv5ztgdyp4ippqoa/gt_depths.npz?rlkey=qb39aajkbhmnod71rm32136ry&dl=0). And then move this file (`gt_depths.npz`) to the folder `./splits/kitti/eigen_benchmark/`.
 
 For NYUv2 dataset, you can download the training and testing datasets as done in [StructDepth](https://github.com/SJTU-ViSYS/StructDepth).
 
