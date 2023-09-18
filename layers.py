@@ -169,23 +169,6 @@ class BackprojectDepth(nn.Module):
 
         return cam_points
 
-
-# class ResidualBlock(nn.Module):
-#     def __init__(self, in_channels, out_channels, stride=1):
-#         super(ResidualBlock, self).__init__()
-#         self.conv = torch.nn.Sequential(
-# 		    nn.PReLU(),
-# 		    nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=True),
-#         	nn.PReLU(),
-# 		    nn.Conv2d(out_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=True))
-    
-#     def forward(self, x):
-#         h = self.conv(x)
-#         if h.shape[1] == x.shape[1]:
-#             h = x + h
-#         return h
-
-
 def ResidualBlock(in_channels, out_channels, stride=1):
 	return torch.nn.Sequential(
 		nn.PReLU(),
