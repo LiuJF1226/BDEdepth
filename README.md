@@ -13,12 +13,13 @@ BDEdepth (HRNet18 640x192)
 </div>
 
 ## Description
-This is the PyTorch implementation for BDEdepth. We build it based on the DDP version of Monodepth2 (see [Monodepth2-DDP](https://github.com/Sauf4896/monodepth2-ddp)), which have several new features:
+This is the PyTorch implementation for BDEdepth. We build it based on the DDP version of Monodepth2 (see [Monodepth2-DDP](https://github.com/Sauf4896/monodepth2-ddp)), which have several features:
 * DDP training mode
 * Resume from an interrupted training automatically
 * Evaluate and log after each epoch
+* KITTI training and evaluation
 * NYUv2 training and evaluation
-* Cityscapes training and evaluation.
+* Cityscapes training and evaluation
 * Make3D evaluation
 
 
