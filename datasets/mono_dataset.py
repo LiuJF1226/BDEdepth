@@ -212,26 +212,18 @@ class MonoDataset(data.Dataset):
         do_color_aug = self.is_train and random.random() > 0.5
         do_flip = self.is_train and random.random() > 0.5
 
-        line = self.filenames[index].split()
-        folder = line[0]
+        folder, frame_index, side = self.index_to_folder_and_frame_idx(index)
 
-        if len(line) == 3:
-            frame_index = int(line[1])
+        if type(self).__name__ in ["CityscapesDataset"]:
+            inputs.update(self.get_color(folder, frame_index, side, do_flip))       
+            self.K = self.load_intrinsics(folder, frame_index)
         else:
-            frame_index = 0
-
-        if len(line) == 3:
-            side = line[2]
-        else:
-            side = None
-
-        side_map = {"2": 2, "3": 3, "l": 2, "r": 3}
-        for i in self.frame_idxs:
-            if i == "s":
-                other_side = {"r": "l", "l": "r"}[side]
-                inputs[("color", i, -1)] = self.get_color(folder, frame_index, other_side, do_flip)
-            else:
-                inputs[("color", i, -1)] = self.get_color(folder, frame_index + i, side, do_flip)
+            for i in self.frame_idxs:
+                if i == "s":
+                    other_side = {"r": "l", "l": "r"}[side]
+                    inputs[("color", i, -1)] = self.get_color(folder, frame_index, other_side, do_flip)
+                else:
+                    inputs[("color", i, -1)] = self.get_color(folder, frame_index + i, side, do_flip)
 
         # adjusting intrinsics to match each scale in the pyramid
         for scale in range(self.num_scales):

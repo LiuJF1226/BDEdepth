@@ -1,6 +1,7 @@
 from .kitti_dataset import KITTIRAWDataset, KITTIOdomDataset, KITTIDepthDataset
 from .make3d_dataset import Make3DDataset
 from .nyuv2_dataset import NYUDataset
+from .cityscapes_dataset import CityscapesDataset
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.sampler import Sampler
 import torch

@@ -18,10 +18,8 @@ This is the PyTorch implementation for BDEdepth. We build it based on the DDP ve
 * Resume from an interrupted training automatically
 * Evaluate and log after each epoch
 * NYUv2 training and evaluation
-* Make3D evaluation
-
-Todo:
 * Cityscapes training and evaluation.
+* Make3D evaluation
 
 
 If you find our work useful in your research please consider citing our paper:
@@ -44,26 +42,49 @@ Install the dependencies with:
 ```shell
 pip install torch==1.9.1+cu111 torchvision==0.10.1+cu111 torchaudio==0.9.1 -f https://download.pytorch.org/whl/torch_stable.html
 
-pip install scikit-image timm thop yacs opencv-python h5py
+pip install scikit-image timm thop yacs opencv-python h5py joblib
 ```
 We experiment with PyTorch 1.9.1, CUDA 11.1, Python 3.7. Other torch versions may also be okay.
 
 
-## Preparing datasets
-For KITTI dataset, you can prepare them as done in [Monodepth2](https://github.com/nianticlabs/monodepth2). Note that we directly train with the raw png images and do not convert them to jpgs. You also need to generate the groundtruth depth maps before training since the code will evaluate after each epoch. For the raw KITTI groundtruth (`eigen` eval split), run the following command. This will generate `gt_depths.npz` file in the folder `./splits/kitti/eigen/`.
+# Preparing datasets
+For KITTI dataset, you can prepare them as done in [Monodepth2](https://github.com/nianticlabs/monodepth2). Note that we directly train with the raw png images and do not convert them to jpgs. You also need to generate the groundtruth depth maps before training since the code will evaluate after each epoch. For the raw KITTI groundtruth (`eigen` eval split), run the following command. This will generate `gt_depths.npz` file in the folder `splits/kitti/eigen/`.
 ```shell
 python export_gt_depth.py --data_path /home/datasets/kitti_raw_data --split eigen
 ```
-Or if you want to use the improved KITTI groundtruth (`eigen_benchmark` eval split), please directly download it in this [link](https://www.dropbox.com/scl/fi/dg7eskv5ztgdyp4ippqoa/gt_depths.npz?rlkey=qb39aajkbhmnod71rm32136ry&dl=0). And then move the downloaded file (`gt_depths.npz`) to the folder `./splits/kitti/eigen_benchmark/`.
+Or if you want to use the improved KITTI groundtruth (`eigen_benchmark` eval split), please directly download it in this [link](https://www.dropbox.com/scl/fi/dg7eskv5ztgdyp4ippqoa/gt_depths.npz?rlkey=qb39aajkbhmnod71rm32136ry&dl=0). And then move the downloaded file (`gt_depths.npz`) to the folder `splits/kitti/eigen_benchmark/`.
 
 For NYUv2 dataset, you can download the training and testing datasets as done in [StructDepth](https://github.com/SJTU-ViSYS/StructDepth).
 
 For Make3D dataset, you can download it from [here](http://make3d.cs.cornell.edu/data.html#make3d).
 
+For Cityscapes dataset, we follow the instructions in [ManyDepth](https://github.com/nianticlabs/manydepth). First Download `leftImg8bit_sequence_trainvaltest.zip` and `camera_trainvaltest.zip` in its [website](https://www.cityscapes-dataset.com/), and unzip them into the folder `/path/to/cityscapes`. Then preprocess CityScapes dataset using the followimg command:
+```shell
+python prepare_cityscapes.py \
+--img_height 512 \
+--img_width 1024 \
+--dataset_dir /home/datasets/cityscapes \
+--dump_root /home/datasets/cityscapes_preprocessed \
+--seq_length 3 \
+--num_threads 8
+```
+Remember to modify `--dataset_dir` and `--dump_root` to your own. The ground truth depth files are provided by ManyDepth in this [link](https://storage.googleapis.com/niantic-lon-static/research/manydepth/gt_depths_cityscapes.zip), which were converted from pixel disparities using intrinsics and the known baseline. Download this and unzip into `splits/cityscapes`
+
+
 ## Weights
-You can download model weights in this [link](https://www.dropbox.com/scl/fo/0zeefm9e4kv0fzumqp490/h?rlkey=ev09rshvarnoyj9kr1qymkppl&dl=0), including two checkpoint files:
+You can download model weights in this [link](https://www.dropbox.com/scl/fo/0zeefm9e4kv0fzumqp490/h?rlkey=ev09rshvarnoyj9kr1qymkppl&dl=0), including three checkpoint files:
 * Pretrained HRNet18 on ImageNet:   `HRNet_W18_C_cosinelr_cutmix_300epoch.pth.tar` 
-* Our final KITTI model (640x192) using HRNet18 backone: `final_hrnet18_640x192.pth`
+* Our final KITTI model (640x192) using HRNet18 backone: `kitti_hrnet18_640x192.pth`
+* Our final Cityscapes model (512x192) using ResNet18 backbone:  `cs_resnet18_512x192.pth`
+
+Note: We additionally provide our model trained on Cityscapes here. Since the training on Cityscapes is really time-consuming, we only train it with ResNet18 backbone, which takes about 40+ hours on a single RTX 3090 GPU card. The evaluating results on Cityscapes are listed as follows.
+
+| model        | abs rel | sq rel | rmse  | rmse log |  a1  | a2 | a3 |
+|-------------------------|-------------------|--------------------------|-----------------|------|----------------|----------------|----------------|
+|  Monodepth2 (reported in ManyDepth)  | 0.129 |1.569 |6.876 | 0.187 | 0.849 |  0.957 | 0.983 |
+|  ManyDepth  |    0.114 |  1.193 |  6.223 |  0.170  |  0.875 |  0.967 |  0.989  |
+|  BDEdepth (this repo) | 0.116 |    1.107 |    6.061 |    0.168 |    0.868 |    0.965 |    0.989 |
+
 
 ## Training
 Before training, move the pretrained HRNet18 weights, `HRNet_W18_C_cosinelr_cutmix_300epoch.pth.tar`, to the folder `BDEdepth/hrnet_IN_pretrained`.
@@ -74,7 +95,7 @@ mkdir hrnet_IN_pretrained
 mv /path/to/HRNet_W18_C_cosinelr_cutmix_300epoch.pth.tar ./hrnet_IN_pretrained
 ```
 
-And you can see the training scripts in [run_kitti.sh](./run_kitti.sh) and [run_nyu.sh](./run_nyu.sh). Take the KITTI script as an example:
+And you can see the training scripts in [run_kitti.sh](./run_kitti.sh), [run_nyu.sh](./run_nyu.sh) and [run_cityscapes.sh](./run_cityscapes.sh). Take the KITTI script as an example:
 ```shell
 # CUDA_VISIBLE_DEVICES=0 python train.py \
 
@@ -131,7 +152,7 @@ You can see the evaluation script in [evaluate.sh](./evaluate.sh).
 
 ```shell
 CUDA_VISIBLE_DEVICES=0 python evaluate_depth.py \
---pretrained_path ./final_hrnet18_640x192.pth \
+--pretrained_path ./kitti_hrnet18_512x192.pth \
 --backbone hrnet \
 --num_layers 18 \
 --batch_size 12 \
@@ -139,10 +160,11 @@ CUDA_VISIBLE_DEVICES=0 python evaluate_depth.py \
 --height 192 \
 --kitti_path /home/datasets/kitti_raw_data \
 --make3d_path /home/datasets/make3d \
---nyuv2_path /home/datasets/nyu_v2 \
+--cityscapes_path /home/datasets/cityscapes \
+--nyuv2_path /home/datasets/nyu_v2 
 # --post_process
 ```
-This script will evaluate on KITTI (both raw and improved GT), NYUv2 and Make3D together. If you don't want to evaluate on one of these datasets, for example KITTI, just do not specify the corresponding `--kitti_path` flag. It will only evaluate on the datasets which you have specified a path flag.
+This script will evaluate on KITTI (both raw and improved GT), NYUv2, Make3D and Cityscapes together. If you don't want to evaluate on some of these datasets, for example KITTI, just do not specify the corresponding `--kitti_path` flag. It will only evaluate on the datasets which you have specified a path flag.
 
 If you want to evalute with post-processing, add the `--post_process` flag.
 
@@ -171,4 +193,5 @@ Here the `--image_path` flag should be a directory containing several video fram
 
 ## Acknowledgement
 We have used codes from other wonderful open-source projects,
-[Monodepth2](https://github.com/nianticlabs/monodepth2), [StructDepth](https://github.com/SJTU-ViSYS/StructDepth), [PlaneDepth](https://github.com/svip-lab/PlaneDepth), [RA-Depth](https://github.com/hmhemu/RA-Depth). Thanks for their excellent works!
+[SfMLearner](https://github.com/tinghuiz/SfMLearner/tree/master),
+[Monodepth2](https://github.com/nianticlabs/monodepth2), [ManyDepth](https://github.com/nianticlabs/manydepth),[StructDepth](https://github.com/SJTU-ViSYS/StructDepth), [PlaneDepth](https://github.com/svip-lab/PlaneDepth) and [RA-Depth](https://github.com/hmhemu/RA-Depth). Thanks for their excellent works!

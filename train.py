@@ -86,6 +86,7 @@ class Trainer:
         # data
         datasets_dict = {"kitti": datasets.KITTIRAWDataset,
                          "kitti_odom": datasets.KITTIOdomDataset,
+                         "cityscapes": datasets.CityscapesDataset,
                          "nyuv2": datasets.NYUDataset}
         self.dataset = datasets_dict[self.opt.dataset]
 
@@ -93,10 +94,14 @@ class Trainer:
             fpath = os.path.join(os.path.dirname(__file__), "splits/kitti", self.opt.split, "{}_files.txt")
             fpath_test = os.path.join(os.path.dirname(__file__), "splits/kitti", self.opt.eval_split, "{}_files.txt")
         elif self.opt.dataset == "kitti_odom":
-            pass
+            fpath = os.path.join(os.path.dirname(__file__), "splits/kitti", "odom", "{}_files.txt")
+            fpath_test = os.path.join(os.path.dirname(__file__), "splits/kitti", "odom", "{}_files_09.txt")
         elif self.opt.dataset == "nyuv2":
             fpath = os.path.join(os.path.dirname(__file__), "splits/nyuv2", "{}_files.txt")
             fpath_test = os.path.join(os.path.dirname(__file__), "splits/nyuv2", "{}_files.txt")
+        elif self.opt.dataset == "cityscapes":
+            fpath = os.path.join(os.path.dirname(__file__), "splits/cityscapes", "{}_files.txt")
+            fpath_test = os.path.join(os.path.dirname(__file__), "splits/cityscapes", "{}_files.txt")            
         else:
             pass
 
@@ -109,8 +114,12 @@ class Trainer:
         self.num_steps_per_epoch = num_train_samples // self.opt.world_size // self.opt.batch_size
         self.num_total_steps = self.num_steps_per_epoch * self.opt.num_epochs
 
-        train_dataset = self.dataset(
-            self.opt.data_path, train_filenames, self.opt.height, self.opt.width, self.opt.frame_ids, self.opt.num_scales, local_crop=self.opt.use_local_crop, patch_reshuffle=self.opt.use_patch_reshuffle, is_train=True, img_ext=img_ext)
+        if self.opt.dataset == "cityscapes":
+            train_dataset = self.dataset(
+                self.opt.data_path_pre, train_filenames, self.opt.height, self.opt.width, self.opt.frame_ids, self.opt.num_scales, local_crop=self.opt.use_local_crop, patch_reshuffle=self.opt.use_patch_reshuffle, is_train=True, img_ext=img_ext)
+        else:
+            train_dataset = self.dataset(
+                self.opt.data_path, train_filenames, self.opt.height, self.opt.width, self.opt.frame_ids, self.opt.num_scales, local_crop=self.opt.use_local_crop, patch_reshuffle=self.opt.use_patch_reshuffle, is_train=True, img_ext=img_ext)
         if self.opt.world_size > 1:
             self.sampler = datasets.CustomDistributedSampler(train_dataset, self.opt.seed)
         else:
@@ -128,6 +137,12 @@ class Trainer:
         if self.opt.dataset == "kitti":
             gt_path = os.path.join(os.path.dirname(__file__), "splits/kitti", self.opt.eval_split, "gt_depths.npz")
             self.gt_depths = np.load(gt_path, fix_imports=True, encoding='latin1', allow_pickle=True)["data"]
+        elif self.opt.dataset == "cityscapes":
+            gt_path = os.path.join(os.path.dirname(__file__), "splits", "cityscapes", "gt_depths")
+            self.gt_depths = []
+            for i in range(len(test_dataset)):
+                gt_depth = np.load(os.path.join(gt_path, str(i).zfill(3) + '_depth.npy'))
+                self.gt_depths.append(gt_depth)
         else:
             pass
 
@@ -258,22 +273,6 @@ class Trainer:
         for m in self.models.values():
             m.eval()
 
-    def train(self):
-        """Run the entire training pipeline
-        """
-        for self.epoch in range(self.ep_start, self.opt.num_epochs):
-            self.run_epoch()
-            if self.opt.lr_sche_type == "step":
-                self.model_lr_scheduler.step()
-            with torch.no_grad():
-                if self.opt.dataset == "kitti":
-                    self.test_kitti()
-                elif self.opt.dataset == "nyuv2":
-                    self.test_nyuv2()
-                else:
-                    pass
-            if self.opt.global_rank == 0:
-                self.save_model(ep_end=True)
 
     def test_nyuv2(self):
         logging.info(" ")
@@ -290,7 +289,7 @@ class Trainer:
 
             output = self.models["depth"](self.models["encoder"](input_color))
             pred_disp, _ = disp_to_depth(output[("disp", 0)], self.opt.min_depth, self.opt.max_depth)
-            pred_disp = pred_disp.cpu()[:, 0]
+            pred_disp = pred_disp[:, 0]
             
             gt_depth = depth
             _, h, w = gt_depth.shape
@@ -299,7 +298,7 @@ class Trainer:
             pred_depths.append(pred_depth)
             gt_depths.append(gt_depth)
         pred_depths = torch.cat(pred_depths, dim=0)
-        gt_depths = torch.cat(gt_depths, dim=0)
+        gt_depths = torch.cat(gt_depths, dim=0).to(self.device)
 
         errors = []
         ratios = []
@@ -316,14 +315,80 @@ class Trainer:
             pred_depth[pred_depth > 10] = 10
             errors.append(compute_depth_errors(gt_depth, pred_depth))
 
-        ratios = np.array(ratios)
-        med = np.median(ratios)
-        std = np.std(ratios / med)
+        ratios = torch.tensor(ratios)
+        med = torch.median(ratios)
+        std = torch.std(ratios / med)
 
         logging.info(" Mono evaluation - using median scaling")
         logging.info(" Scaling ratios | med: {:0.3f} | std: {:0.3f}".format(med, std))
 
-        mean_errors = np.array(errors).mean(0)
+        mean_errors = torch.tensor(errors).mean(0)
+
+        logging.info(("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
+        logging.info(("{: 8.3f} | " * 7 + "\n").format(*mean_errors.tolist()))
+        self.set_train()
+
+
+    def test_cityscapes(self):
+        logging.info(" ")
+        logging.info("Test the model at epoch {} \n".format(self.epoch))
+        MIN_DEPTH = 1e-3
+        MAX_DEPTH = 80
+        STEREO_SCALE_FACTOR = 5.4
+        self.set_eval()       
+
+        pred_disps = []
+        for idx, data in enumerate(self.test_loader):
+            if self.opt.global_rank == 0:
+                print("{}/{}".format(idx+1, len(self.test_loader)), end='\r')
+            input_color = data[("color", 0, 0)].to(self.device)
+            output = self.models["depth"](self.models["encoder"](input_color))
+            pred_disp, _ = disp_to_depth(output[("disp", 0)], self.opt.min_depth, self.opt.max_depth)
+            pred_disps.append(pred_disp[:, 0])
+        pred_disps = torch.cat(pred_disps, dim=0)
+
+        errors = []
+        ratios = []
+        for i in range(pred_disps.shape[0]):
+            gt_depth = torch.from_numpy(self.gt_depths[i]).cuda()
+            gt_height, gt_width = gt_depth.shape[:2]
+
+            # crop ground truth to remove ego car -> this has happened in the dataloader for inputs
+            gt_height = int(round(gt_height * 0.75))
+            gt_depth = gt_depth[:gt_height]
+            pred_disp = pred_disps[i:i+1].unsqueeze(0)
+            pred_disp = F.interpolate(pred_disp, (gt_height, gt_width), mode="bilinear", align_corners=True)
+            pred_depth = 1 / pred_disp[0, 0, :]
+
+            # when evaluating cityscapes, we centre crop to the middle 50% of the image.
+            # Bottom 25% has already been removed - so crop the sides and the top here
+            gt_depth = gt_depth[256:, 192:1856]
+            pred_depth = pred_depth[256:, 192:1856]
+
+            mask = (gt_depth > MIN_DEPTH) & (gt_depth < MAX_DEPTH)
+            pred_depth = pred_depth[mask]
+            gt_depth = gt_depth[mask]
+
+            if self.opt.use_stereo:
+                pred_depth *= STEREO_SCALE_FACTOR
+            else:
+                ratio = torch.median(gt_depth) / torch.median(pred_depth)
+                ratios.append(ratio)
+                pred_depth *= ratio  
+            pred_depth = torch.clamp(pred_depth, MIN_DEPTH, MAX_DEPTH)
+            errors.append(compute_depth_errors(gt_depth, pred_depth))
+
+        if self.opt.use_stereo:
+            logging.info(" Stereo evaluation - disabling median scaling")
+            logging.info(" Scaling by {}".format(STEREO_SCALE_FACTOR))
+        else:
+            ratios = torch.tensor(ratios)
+            med = torch.median(ratios)
+            std = torch.std(ratios / med)
+            logging.info(" Mono evaluation - using median scaling")
+            logging.info(" Scaling ratios | med: {:0.3f} | std: {:0.3f}".format(med, std))
+
+        mean_errors = torch.tensor(errors).mean(0)
 
         logging.info(("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
         logging.info(("{: 8.3f} | " * 7 + "\n").format(*mean_errors.tolist()))
@@ -348,13 +413,13 @@ class Trainer:
             input_color = data[("color", 0, 0)].to(self.device)
             output = self.models["depth"](self.models["encoder"](input_color))
             pred_disp, _ = disp_to_depth(output[("disp", 0)], self.opt.min_depth, self.opt.max_depth)
-            pred_disps.append(pred_disp.cpu()[:, 0])
+            pred_disps.append(pred_disp[:, 0])
         pred_disps = torch.cat(pred_disps, dim=0)
 
         errors = []
         ratios = []
         for i in range(pred_disps.shape[0]):
-            gt_depth = torch.from_numpy(self.gt_depths[i])
+            gt_depth = torch.from_numpy(self.gt_depths[i]).cuda()
             gt_height, gt_width = gt_depth.shape[:2]
             pred_disp = pred_disps[i:i+1].unsqueeze(0)
             pred_disp = F.interpolate(pred_disp, (gt_height, gt_width), mode="bilinear", align_corners=False)
@@ -371,7 +436,7 @@ class Trainer:
 
             pred_depth = pred_depth[mask]
             gt_depth = gt_depth[mask]
-            if self.opt.use_stereo and len(self.opt.frame_ids)==1:
+            if self.opt.use_stereo:
                 pred_depth *= STEREO_SCALE_FACTOR
             else:
                 ratio = torch.median(gt_depth) / torch.median(pred_depth)
@@ -380,21 +445,42 @@ class Trainer:
             pred_depth = torch.clamp(pred_depth, MIN_DEPTH, MAX_DEPTH)
             errors.append(compute_depth_errors(gt_depth, pred_depth))
 
-        if self.opt.use_stereo and len(self.opt.frame_ids)==1:
+        if self.opt.use_stereo:
             logging.info(" Stereo evaluation - disabling median scaling")
             logging.info(" Scaling by {}".format(STEREO_SCALE_FACTOR))
         else:
-            ratios = np.array(ratios)
-            med = np.median(ratios)
-            std = np.std(ratios / med)
+            ratios = torch.tensor(ratios)
+            med = torch.median(ratios)
+            std = torch.std(ratios / med)
             logging.info(" Mono evaluation - using median scaling")
             logging.info(" Scaling ratios | med: {:0.3f} | std: {:0.3f}".format(med, std))
 
-        mean_errors = np.array(errors).mean(0)
+        mean_errors = torch.tensor(errors).mean(0)
 
         logging.info(("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
         logging.info(("{: 8.3f} | " * 7 + "\n").format(*mean_errors.tolist()))
         self.set_train()
+
+
+    def train(self):
+        """Run the entire training pipeline
+        """
+        for self.epoch in range(self.ep_start, self.opt.num_epochs):
+            self.run_epoch()
+            if self.opt.lr_sche_type == "step":
+                self.model_lr_scheduler.step()
+            with torch.no_grad():
+                if self.opt.dataset == "kitti":
+                    self.test_kitti()
+                elif self.opt.dataset == "nyuv2":
+                    self.test_nyuv2()
+                elif self.opt.dataset == "cityscapes":
+                    self.test_cityscapes()
+                else:
+                    pass
+            if self.opt.global_rank == 0:
+                self.save_model(ep_end=True)
+
 
     def run_epoch(self):
         """Run a single epoch of training and validation

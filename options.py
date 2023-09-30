@@ -33,6 +33,9 @@ parser.add_argument("--data_path",
                     type=str,
                     help="path to the training data",
                     default=os.path.join(file_dir, "kitti_data"))
+parser.add_argument("--data_path_pre",
+                    type=str,
+                    help="path to the preprocessed training data, specify when training on Cityscapes.")
 parser.add_argument("--log_dir",
                     type=str,
                     help="log directory",
@@ -62,7 +65,7 @@ parser.add_argument("--dataset",
                     type=str,
                     help="dataset to train on",
                     default="kitti",
-                    choices=["kitti", "kitti_odom", "kitti_depth", "kitti_test", "nyuv2"])
+                    choices=["kitti", "kitti_odom", "kitti_depth", "kitti_test", "nyuv2", "cityscapes"])
 parser.add_argument("--jpg",
                     help="if set, trains from raw KITTI jpg files (instead of pngs)",
                     action="store_true")

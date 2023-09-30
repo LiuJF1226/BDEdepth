@@ -68,8 +68,10 @@ def eval_args():
                         help="data path of Make3D, do not set if you do not want to evaluate on this dataset")
     parser.add_argument('--nyuv2_path',
                         type=str,
-                        help="data path of Make3D, do not set if you do not want to evaluate on this dataset")
-
+                        help="data path of NYU v2, do not set if you do not want to evaluate on this dataset")
+    parser.add_argument('--cityscapes_path',
+                        type=str,
+                        help="data path of Cityscapes, do not set if you do not want to evaluate on this dataset")
     args = parser.parse_args()
     return args
 
@@ -95,8 +97,8 @@ def batch_post_process_disparity(l_disp, r_disp):
     l, _ = np.meshgrid(np.linspace(0, 1, w), np.linspace(0, 1, h))
     l_mask = (1.0 - np.clip(20 * (l - 0.05), 0, 1))[None, ...]
     r_mask = l_mask[:, :, ::-1]
-    l_mask = torch.tensor(l_mask)
-    r_mask = torch.tensor(r_mask.copy())
+    l_mask = torch.tensor(l_mask).cuda()
+    r_mask = torch.tensor(r_mask.copy()).cuda()
     return r_mask * l_disp + l_mask * r_disp + (1.0 - l_mask - r_mask) * m_disp
 
 
@@ -137,7 +139,7 @@ def test_kitti(args, dataloader, depth_encoder, depth_decoder, eval_split='eigen
             input_color = torch.cat((input_color, torch.flip(input_color, [3])), 0)
         output = depth_decoder(depth_encoder(input_color))
         pred_disp, _ = disp_to_depth(output[("disp", 0)], args.min_depth, args.max_depth)
-        pred_disp = pred_disp.cpu()[:, 0]
+        pred_disp = pred_disp[:, 0]
         if args.post_process:
             N = pred_disp.shape[0] // 2
             pred_disp = batch_post_process_disparity(pred_disp[:N], torch.flip(pred_disp[N:], [2]))
@@ -147,7 +149,7 @@ def test_kitti(args, dataloader, depth_encoder, depth_decoder, eval_split='eigen
     errors = []
     ratios = []
     for i in range(pred_disps.shape[0]):
-        gt_depth = torch.from_numpy(gt_depths[i])
+        gt_depth = torch.from_numpy(gt_depths[i]).cuda()
         gt_height, gt_width = gt_depth.shape[:2]
         pred_disp = pred_disps[i:i+1].unsqueeze(0)
         pred_disp = F.interpolate(pred_disp, (gt_height, gt_width), mode="bilinear", align_corners=True)
@@ -174,12 +176,12 @@ def test_kitti(args, dataloader, depth_encoder, depth_decoder, eval_split='eigen
         errors.append(compute_depth_errors(gt_depth, pred_depth))
 
     if not args.use_stereo:
-        ratios = np.array(ratios)
-        med = np.median(ratios)
-        std = np.std(ratios / med)
+        ratios = torch.tensor(ratios)
+        med = torch.median(ratios)
+        std = torch.std(ratios / med)
         print(" Scaling ratios | med: {:0.3f} | std: {:0.3f}".format(med, std))
 
-    mean_errors = np.array(errors).mean(0)
+    mean_errors = torch.tensor(errors).mean(0)
 
     print(("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
     print(("{: 8.3f} | " * 7 + "\n").format(*mean_errors.tolist()))
@@ -194,7 +196,7 @@ def test_make3d(args, dataloader, depth_encoder, depth_decoder):
 
         output = depth_decoder(depth_encoder(input_color))
         pred_disp, _ = disp_to_depth(output[("disp", 0)], args.min_depth, args.max_depth)
-        pred_disp = pred_disp.cpu()[:, 0]
+        pred_disp = pred_disp[:, 0]
 
         if args.post_process:
             N = pred_disp.shape[0] // 2
@@ -207,7 +209,7 @@ def test_make3d(args, dataloader, depth_encoder, depth_decoder):
         pred_depths.append(pred_depth)
         gt_depths.append(gt_depth)
     pred_depths = torch.cat(pred_depths, dim=0)
-    gt_depths = torch.cat(gt_depths, dim=0)
+    gt_depths = torch.cat(gt_depths, dim=0).cuda()
 
     errors = []
     ratios = []
@@ -227,12 +229,12 @@ def test_make3d(args, dataloader, depth_encoder, depth_decoder):
         errors.append(compute_errors(gt_depth, pred_depth))
 
     if not args.use_stereo:
-        ratios = np.array(ratios)
-        med = np.median(ratios)
-        std = np.std(ratios / med)
+        ratios = torch.tensor(ratios)
+        med = torch.median(ratios)
+        std = torch.std(ratios / med)
         print(" Scaling ratios | med: {:0.3f} | std: {:0.3f}".format(med, std))
 
-    mean_errors = np.array(errors).mean(0)
+    mean_errors = torch.tensor(errors).mean(0)
 
     print(("{:>8} | " * 4).format( "abs_rel", "sq_rel", "rmse", "rmse_log"))
     print(("{: 8.3f} | " * 4 + "\n").format(*mean_errors.tolist()))
@@ -247,7 +249,7 @@ def test_nyuv2(args, dataloader, depth_encoder, depth_decoder):
 
         output = depth_decoder(depth_encoder(input_color))
         pred_disp, _ = disp_to_depth(output[("disp", 0)], args.min_depth, args.max_depth)
-        pred_disp = pred_disp.cpu()[:, 0]
+        pred_disp = pred_disp[:, 0]
 
         if args.post_process:
             N = pred_disp.shape[0] // 2
@@ -260,7 +262,7 @@ def test_nyuv2(args, dataloader, depth_encoder, depth_decoder):
         pred_depths.append(pred_depth)
         gt_depths.append(gt_depth)
     pred_depths = torch.cat(pred_depths, dim=0)
-    gt_depths = torch.cat(gt_depths, dim=0)
+    gt_depths = torch.cat(gt_depths, dim=0).cuda()
 
     errors = []
     ratios = []
@@ -270,25 +272,83 @@ def test_nyuv2(args, dataloader, depth_encoder, depth_decoder):
         mask = (gt_depth > 0) & (gt_depth < 10)
         pred_depth = pred_depth[mask]
         gt_depth = gt_depth[mask]
+        ratio = torch.median(gt_depth) / torch.median(pred_depth)
+        ratios.append(ratio)
+        pred_depth *= ratio         
+        pred_depth[pred_depth > 10] = 10
+        errors.append(compute_depth_errors(gt_depth, pred_depth))
+
+    ratios = torch.tensor(ratios)
+    med = torch.median(ratios)
+    std = torch.std(ratios / med)
+    print(" Scaling ratios | med: {:0.3f} | std: {:0.3f}".format(med, std))
+
+    mean_errors = torch.tensor(errors).mean(0)
+
+    print(("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
+    print(("{: 8.3f} | " * 7 + "\n").format(*mean_errors.tolist()))
+
+
+def test_cityscapes(args, dataloader, depth_encoder, depth_decoder):
+    MIN_DEPTH = 1e-3
+    MAX_DEPTH = 80
+
+    gt_path = os.path.join(os.path.dirname(__file__), "splits", "cityscapes", "gt_depths")
+
+    pred_disps = []
+    for data in dataloader:
+        input_color = data[("color", 0, 0)].cuda()
+        if args.post_process:
+            input_color = torch.cat((input_color, torch.flip(input_color, [3])), 0)
+        output = depth_decoder(depth_encoder(input_color))
+        pred_disp, _ = disp_to_depth(output[("disp", 0)], args.min_depth, args.max_depth)
+        pred_disp = pred_disp[:, 0]
+        if args.post_process:
+            N = pred_disp.shape[0] // 2
+            pred_disp = batch_post_process_disparity(pred_disp[:N], torch.flip(pred_disp[N:], [2]))
+        pred_disps.append(pred_disp)
+    pred_disps = torch.cat(pred_disps, dim=0)
+
+    errors = []
+    ratios = []
+    for i in range(pred_disps.shape[0]):
+        gt_depth = np.load(os.path.join(gt_path, str(i).zfill(3) + '_depth.npy'))
+        gt_height, gt_width = gt_depth.shape[:2]
+        # crop ground truth to remove ego car -> this has happened in the dataloader for inputs
+        gt_height = int(round(gt_height * 0.75))
+        gt_depth = torch.from_numpy(gt_depth[:gt_height]).cuda()
+        pred_disp = pred_disps[i:i+1].unsqueeze(0)
+        pred_disp = F.interpolate(pred_disp, (gt_height, gt_width), mode="bilinear", align_corners=True)
+        pred_depth = 1 / pred_disp[0, 0, :]
+
+        # when evaluating cityscapes, we centre crop to the middle 50% of the image.
+        # Bottom 25% has already been removed - so crop the sides and the top here
+        gt_depth = gt_depth[256:, 192:1856]
+        pred_depth = pred_depth[256:, 192:1856]
+
+        mask = (gt_depth > MIN_DEPTH) & (gt_depth < MAX_DEPTH)
+        pred_depth = pred_depth[mask]
+        gt_depth = gt_depth[mask]
+       
         if args.use_stereo:
             pred_depth *= STEREO_SCALE_FACTOR
         else:
             ratio = torch.median(gt_depth) / torch.median(pred_depth)
             ratios.append(ratio)
-            pred_depth *= ratio         
-        pred_depth[pred_depth > 10] = 10
+            pred_depth *= ratio  
+        pred_depth = torch.clamp(pred_depth, MIN_DEPTH, MAX_DEPTH)
         errors.append(compute_depth_errors(gt_depth, pred_depth))
 
     if not args.use_stereo:
-        ratios = np.array(ratios)
-        med = np.median(ratios)
-        std = np.std(ratios / med)
+        ratios = torch.tensor(ratios)
+        med = torch.median(ratios)
+        std = torch.std(ratios / med)
         print(" Scaling ratios | med: {:0.3f} | std: {:0.3f}".format(med, std))
 
-    mean_errors = np.array(errors).mean(0)
+    mean_errors = torch.tensor(errors).mean(0)
 
     print(("{:>8} | " * 7).format("abs_rel", "sq_rel", "rmse", "rmse_log", "a1", "a2", "a3"))
-    print(("{: 8.3f} | " * 7 + "\n").format(*mean_errors.tolist()))
+    print(("{: 8.3f} | " * 7 + "\n").format(*mean_errors.tolist()))  
 
 def main(args):
 
@@ -340,6 +400,14 @@ def main(args):
         dataloader = DataLoader(dataset, args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=False, drop_last=False)
         with torch.no_grad():
             test_nyuv2(args, dataloader, depth_encoder, depth_decoder)
+
+    if args.cityscapes_path:
+        print(" Evaluate on Cisyscapes:")
+        filenames = readlines(os.path.join(splits_dir, "cityscapes", "test_files.txt"))
+        dataset = datasets.CityscapesDataset(args.cityscapes_path, filenames, input_resolution[0], input_resolution[1], [0], 1, is_train=False)
+        dataloader = DataLoader(dataset, args.batch_size, shuffle=False, num_workers=args.num_workers, pin_memory=False, drop_last=False)
+        with torch.no_grad():
+            test_cityscapes(args, dataloader, depth_encoder, depth_decoder)  
 
 if __name__ == '__main__':
     args = eval_args()
