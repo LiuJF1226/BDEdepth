@@ -1033,9 +1033,11 @@ class Trainer:
         with open(os.path.join(self.log_path, 'opt.json'), 'w') as f:
             json.dump(to_save, f, indent=2)
         s = os.path.split(os.path.realpath(__file__))[0]+'/'
+        s = 'ls {} | grep -v splits | xargs'.format(s)
         t = os.path.join(self.log_path, 'codes')
         os.system("rm -rf {}".format(t))
-        os.system("cp -rf {} {}".format(s, t))
+        os.mkdir(t)
+        os.system("cp -rf `{}` {}".format(s, t))
 
 
     def save_model(self, ep_end=False, batch_idx=0):
