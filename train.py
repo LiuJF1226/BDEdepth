@@ -527,7 +527,7 @@ class Trainer:
                     dist.barrier()
                     for k in losses.keys():
                         dist.all_reduce(losses[k], op=dist.ReduceOp.SUM)
-                        losses[k] /= self.opt.world_size
+                        losses[k] = losses[k] / self.opt.world_size
                     dist.barrier()
                 if self.opt.global_rank == 0:
                     self.log_time(batch_idx+self.batch_start, data_time, fp_time, bp_time, losses)
