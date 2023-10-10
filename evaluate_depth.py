@@ -119,11 +119,11 @@ def load_model(args):
     depth_encoder.cuda().eval()
     depth_decoder.cuda().eval()
     
-    input_color = torch.ones(1, 3, model['height'], model['width']).cuda()
+    input_color = torch.ones(1, 3, args.height, args.width).cuda()
     flops, params, flops_e, params_e, flops_d, params_d = profile_once(depth_encoder, depth_decoder, input_color)
     print("\n  " + ("flops: {0}, params: {1}, flops_e: {2}, params_e:{3}, flops_d:{4}, params_d:{5}").format(flops, params, flops_e, params_e, flops_d, params_d) + "\n")
   
-    return depth_encoder, depth_decoder, (model['height'], model['width'])
+    return depth_encoder, depth_decoder
 
 def test_kitti(args, dataloader, depth_encoder, depth_decoder, eval_split='eigen'):
     MIN_DEPTH = 1e-3
@@ -352,7 +352,7 @@ def test_cityscapes(args, dataloader, depth_encoder, depth_decoder):
 
 def main(args):
 
-    depth_encoder, depth_decoder, input_resolution = load_model(args)
+    depth_encoder, depth_decoder = load_model(args)
     input_resolution = (args.height, args.width)
     
     print(" Evaluated at resolution {} * {}".format(input_resolution[0], input_resolution[1]))
