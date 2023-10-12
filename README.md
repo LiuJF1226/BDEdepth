@@ -19,7 +19,12 @@ BDEdepth (HRNet18 640x192 KITTI)
 ## Table of Contents
 - [Description](#description)
 - [Setup](#setup)
-- [Preparing datasets](#[preparing datasets])
+- [Preparing datasets](#datasets)
+- [Weights](#weights)
+- [Training](#training)
+- [Evaluation](#evaluation)
+- [Prediction](#prediction)
+- [Acknowledgement](#acknowledgement)
 
 
 ## Description
@@ -58,7 +63,7 @@ pip install scikit-image timm thop yacs opencv-python h5py joblib
 We experiment with PyTorch 1.9.1, CUDA 11.1, Python 3.7. Other torch versions may also be okay.
 
 
-## Preparing datasets
+## <span id="datasets">Preparing datasets</span>
 For KITTI dataset, you can prepare them as done in [Monodepth2](https://github.com/nianticlabs/monodepth2). Note that we directly train with the raw png images and do not convert them to jpgs. You also need to generate the groundtruth depth maps before training since the code will evaluate after each epoch. For the raw KITTI groundtruth (`eigen` eval split), run the following command. This will generate `gt_depths.npz` file in the folder `splits/kitti/eigen/`.
 ```shell
 python export_gt_depth.py --data_path /home/datasets/kitti_raw_data --split eigen
