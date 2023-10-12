@@ -19,6 +19,7 @@ BDEdepth (HRNet18 640x192 KITTI)
 ## Table of Contents
 - [Description](#description)
 - [Setup](#setup)
+- [Preparing datasets](#preparingdatasets)
 
 
 ## Description
