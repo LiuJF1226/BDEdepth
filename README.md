@@ -20,6 +20,9 @@ BDEdepth (HRNet18 640x192 KITTI)
 - [Description](#description)
 - [Setup](#setup)
 - [Preparing datasets](#datasets)
+  - [KITTI](#kitti)
+  - [NYUv2 and Make3D](#nm)
+  - [Cityscapes](#cityscapes)
 - [Weights](#weights)
 - [Training](#training)
 - [Evaluation](#evaluation)
@@ -64,16 +67,19 @@ We experiment with PyTorch 1.9.1, CUDA 11.1, Python 3.7. Other torch versions ma
 
 
 ## <span id="datasets">Preparing datasets</span>
+### KITTI
 For KITTI dataset, you can prepare them as done in [Monodepth2](https://github.com/nianticlabs/monodepth2). Note that we directly train with the raw png images and do not convert them to jpgs. You also need to generate the groundtruth depth maps before training since the code will evaluate after each epoch. For the raw KITTI groundtruth (`eigen` eval split), run the following command. This will generate `gt_depths.npz` file in the folder `splits/kitti/eigen/`.
 ```shell
 python export_gt_depth.py --data_path /home/datasets/kitti_raw_data --split eigen
 ```
 Or if you want to use the improved KITTI groundtruth (`eigen_benchmark` eval split), please directly download it in this [link](https://www.dropbox.com/scl/fi/dg7eskv5ztgdyp4ippqoa/gt_depths.npz?rlkey=qb39aajkbhmnod71rm32136ry&dl=0). And then move the downloaded file (`gt_depths.npz`) to the folder `splits/kitti/eigen_benchmark/`.
 
+### <span id="nm">NYUv2 and Make3D</span>
 For NYUv2 dataset, you can download the training and testing datasets as done in [StructDepth](https://github.com/SJTU-ViSYS/StructDepth).
 
 For Make3D dataset, you can download it from [here](http://make3d.cs.cornell.edu/data.html#make3d).
 
+### Cityscapes
 For Cityscapes dataset, we follow the instructions in [ManyDepth](https://github.com/nianticlabs/manydepth). First Download `leftImg8bit_sequence_trainvaltest.zip` and `camera_trainvaltest.zip` in its [website](https://www.cityscapes-dataset.com/), and unzip them into the folder `/path/to/cityscapes`. Then preprocess CityScapes dataset using the followimg command:
 ```shell
 python prepare_cityscapes.py \
