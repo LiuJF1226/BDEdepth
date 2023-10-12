@@ -27,6 +27,8 @@ BDEdepth (HRNet18 640x192 KITTI)
 - [Training](#training)
 - [Evaluation](#evaluation)
 - [Prediction](#prediction)
+  - [Prediction for a single image](#image)
+  - [Prediction for a video](#video)
 - [Acknowledgement](#acknowledgement)
 
 
@@ -196,7 +198,7 @@ If you want to evalute with post-processing, add the `--post_process` flag.
 
 ## Prediction
 
-### Prediction for a single image
+### <span id="image">Prediction for a single image</span>
 You can predict scaled disparity for a single image with:
 
 ```shell
@@ -209,7 +211,7 @@ The `--image_path` flag can also be a directory containing several images. In th
 python test_simple.py --image_path folder --pretrained_path ./final_hrnet18_640x192.pth --backbone hrnet --height 192 --width 640 --ext png --save_npy
 ```
 
-### Prediction for a video
+### <span id="video">Prediction for a video</span>
 
 ```shell
 python test_video.py --image_path folder --pretrained_path ./final_hrnet18_640x192.pth --backbone hrnet --height 192 --width 640 --ext png
