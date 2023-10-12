@@ -9,10 +9,6 @@
 <p align="center">
   <img src="assets/demo.gif" alt="example input output gif" width="450" />
 </p>
-
-<p align="center">
-  <img src="assets/3d_vis.png" alt="example input output gif" width="700" />
-</p>
 BDEdepth (HRNet18 640x192 KITTI)
 </div>
 
