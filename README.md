@@ -91,7 +91,7 @@ Note: We additionally train and evaluate on Cityscapes here. The results are lis
 |  Monodepth2 (reported in ManyDepth)  | 0.129 |1.569 |6.876 | 0.187 | 0.849 |  0.957 | 0.983 |
 |  ManyDepth  |    0.114 |  1.193 |  6.223 |  0.170  |  **0.875** |  0.967 |  0.989  |
 |  Ours(ResNet18) | 0.116 |    1.107 |    6.061 |    0.168 |    0.868 |    0.965 |    0.989 |
-|  Ours(HRNet18) | **0.112** |    **1.027** |    **5.862** |    **0.163** |    0.874 |    **0.968** |    **0.990** |
+|  Ours(HRNet18) |  **0.112**  |    **1.027** |    **5.862** |    **0.163** |    0.874 |    **0.968** |    **0.990** |
 
 
 ## Training
