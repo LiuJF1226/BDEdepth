@@ -9,7 +9,11 @@
 <p align="center">
   <img src="assets/demo.gif" alt="example input output gif" width="450" />
 </p>
-BDEdepth (HRNet18 640x192)
+
+<p align="center">
+  <img src="assets/3d_vis.png" alt="example input output gif" width="450" />
+</p>
+BDEdepth (HRNet18 640x192 KITTI)
 </div>
 
 ## Description
@@ -73,18 +77,21 @@ Remember to modify `--dataset_dir` and `--dump_root` to your own. The ground tru
 
 
 ## Weights
-You can download model weights in this [link](https://www.dropbox.com/scl/fo/0zeefm9e4kv0fzumqp490/h?rlkey=ev09rshvarnoyj9kr1qymkppl&dl=0), including three checkpoint files:
+You can download model weights in this [link](https://www.dropbox.com/scl/fo/0zeefm9e4kv0fzumqp490/h?rlkey=ev09rshvarnoyj9kr1qymkppl&dl=0), including 5 checkpoint files:
 * Pretrained HRNet18 on ImageNet:   `HRNet_W18_C_cosinelr_cutmix_300epoch.pth.tar` 
 * Our final KITTI model (640x192) using HRNet18 backone: `kitti_hrnet18_640x192.pth`
+* Our final KITTI model (640x192) using ResNet18 backone: `kitti_resnet18_640x192.pth`
+* Our final Cityscapes model (512x192) using HRNet18 backbone:  `cs_hrnet18_512x192.pth`
 * Our final Cityscapes model (512x192) using ResNet18 backbone:  `cs_resnet18_512x192.pth`
 
-Note: We additionally provide our model trained on Cityscapes here. Since the training on Cityscapes is really time-consuming, we only train it with ResNet18 backbone, which takes about 40+ hours on a single RTX 3090 GPU card. The evaluating results on Cityscapes are listed as follows.
+Note: We additionally train and evaluate on Cityscapes here. The results are listed as follows.
 
 | model        | abs rel | sq rel | rmse  | rmse log |  a1  | a2 | a3 |
 |-------------------------|-------------------|--------------------------|-----------------|------|----------------|----------------|----------------|
 |  Monodepth2 (reported in ManyDepth)  | 0.129 |1.569 |6.876 | 0.187 | 0.849 |  0.957 | 0.983 |
-|  ManyDepth  |    0.114 |  1.193 |  6.223 |  0.170  |  0.875 |  0.967 |  0.989  |
-|  BDEdepth (this repo) | 0.116 |    1.107 |    6.061 |    0.168 |    0.868 |    0.965 |    0.989 |
+|  ManyDepth  |    0.114 |  1.193 |  6.223 |  0.170  |  **0.875** |  0.967 |  0.989  |
+|  Ours(ResNet18) | 0.116 |    1.107 |    6.061 |    0.168 |    0.868 |    0.965 |    0.989 |
+|  Ours(HRNet18) | **0.112** |    **1.027** |    **5.862** |    **0.163** |    0.874 |    **0.968** |    **0.990** |
 
 
 ## Training
