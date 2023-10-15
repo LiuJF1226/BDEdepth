@@ -175,7 +175,7 @@ You can see the evaluation script in [evaluate.sh](./evaluate.sh).
 
 ```shell
 CUDA_VISIBLE_DEVICES=0 python evaluate_depth.py \
---pretrained_path ./kitti_hrnet18_512x192.pth \
+--pretrained_path ./kitti_hrnet18_640x192.pth \
 --backbone hrnet \
 --num_layers 18 \
 --batch_size 12 \
