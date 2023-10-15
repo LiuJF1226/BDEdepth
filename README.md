@@ -198,19 +198,19 @@ If you want to evalute with post-processing, add the `--post_process` flag.
 You can predict scaled disparity for a single image with:
 
 ```shell
-python test_simple.py --image_path folder/test_image.jpg --pretrained_path ./final_hrnet18_640x192.pth --backbone hrnet --height 192 --width 640 --save_npy
+python test_simple.py --image_path folder/test_image.jpg --pretrained_path ./kitti_hrnet18_640x192.pth --backbone hrnet --height 192 --width 640 --save_npy
 ```
 
 The `--image_path` flag can also be a directory containing several images. In this setting, the script will predict all the images (use `--ext` to specify png or jpg) in the directory:
 
 ```shell
-python test_simple.py --image_path folder --pretrained_path ./final_hrnet18_640x192.pth --backbone hrnet --height 192 --width 640 --ext png --save_npy
+python test_simple.py --image_path folder --pretrained_path ./kitti_hrnet18_640x192.pth --backbone hrnet --height 192 --width 640 --ext png --save_npy
 ```
 
 ### <span id="video">Prediction for a video</span>
 
 ```shell
-python test_video.py --image_path folder --pretrained_path ./final_hrnet18_640x192.pth --backbone hrnet --height 192 --width 640 --ext png
+python test_video.py --image_path folder --pretrained_path ./kitti_hrnet18_640x192.pth --backbone hrnet --height 192 --width 640 --ext png
 ```
 Here the `--image_path` flag should be a directory containing several video frames. Note that these video frame files should be named in an ascending numerical order. For example, the first frame is named as `0000.png`, the second frame is named as `0001.png`, and etc. Then the script will output a GIF file.
 
