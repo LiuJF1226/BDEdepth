@@ -23,7 +23,7 @@ import json
 from utils import *
 from kitti_utils import *
 from layers import *
-
+import shutil
 
 import datasets
 from networks import *
@@ -1032,12 +1032,18 @@ class Trainer:
         to_save = self.opt.__dict__.copy()
         with open(os.path.join(self.log_path, 'opt.json'), 'w') as f:
             json.dump(to_save, f, indent=2)
-        s = os.path.split(os.path.realpath(__file__))[0]+'/'
-        s = 'ls {} | grep -v splits | xargs'.format(s)
-        t = os.path.join(self.log_path, 'codes')
-        os.system("rm -rf {}".format(t))
-        os.mkdir(t)
-        os.system("cp -rf `{}` {}".format(s, t))
+        source_folder = os.path.split(os.path.realpath(__file__))[0]+'/'
+        target_folder = os.path.join(self.log_path, 'codes')
+        os.system("rm -rf {}".format(target_folder))
+        exts = [".sh", ".py"] 
+        for root, dirs, files in os.walk(source_folder):
+            for file in files:
+                if any(file.endswith(ext) for ext in exts):
+                    source_file_path = os.path.join(root, file)
+                    relative_path = os.path.relpath(source_file_path, source_folder)
+                    target_file_path = os.path.join(target_folder, relative_path)
+                    os.makedirs(os.path.dirname(target_file_path), exist_ok=True)
+                    shutil.copy(source_file_path, target_file_path)
 
 
     def save_model(self, ep_end=False, batch_idx=0):
