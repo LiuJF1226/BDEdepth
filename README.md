@@ -217,4 +217,4 @@ Here the `--image_path` flag should be a directory containing several video fram
 ## Acknowledgement
 We have used codes from other wonderful open-source projects,
 [SfMLearner](https://github.com/tinghuiz/SfMLearner/tree/master),
-[Monodepth2](https://github.com/nianticlabs/monodepth2), [ManyDepth](https://github.com/nianticlabs/manydepth),[StructDepth](https://github.com/SJTU-ViSYS/StructDepth), [PlaneDepth](https://github.com/svip-lab/PlaneDepth) and [RA-Depth](https://github.com/hmhemu/RA-Depth). Thanks for their excellent works!
+[Monodepth2](https://github.com/nianticlabs/monodepth2), [ManyDepth](https://github.com/nianticlabs/manydepth), [StructDepth](https://github.com/SJTU-ViSYS/StructDepth), [PlaneDepth](https://github.com/svip-lab/PlaneDepth) and [RA-Depth](https://github.com/hmhemu/RA-Depth). Thanks for their excellent works!
