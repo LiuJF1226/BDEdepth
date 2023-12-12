@@ -6,6 +6,8 @@
   
   Jinfeng Liu, [Lingtong Kong](https://scholar.google.com/citations?hl=zh-CN&user=KKzKc_8AAAAJ), [Jie Yang](http://www.pami.sjtu.edu.cn/jieyang), [Wei Liu](http://www.pami.sjtu.edu.cn/weiliu)
 
+  Accepted by IEEE Robotics and Automation Letters (RA-L), 2023
+
 <p align="center">
   <img src="assets/demo.gif" alt="example input output gif" width="450" />
 </p>
@@ -42,14 +44,15 @@ This is the PyTorch implementation for BDEdepth. We build it based on the DDP ve
 If you find our work useful in your research please consider citing our paper:
 
 ```
-@misc{liu2023better,
-      title={Towards Better Data Exploitation In Self-Supervised Monocular Depth Estimation}, 
-      author={Jinfeng Liu and Lingtong Kong and Jie Yang and Wei Liu},
-      year={2023},
-      eprint={2309.05254},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
-}
+@ARTICLE{10333263,
+  author={Liu, Jinfeng and Kong, Lingtong and Yang, Jie and Liu, Wei},
+  journal={IEEE Robotics and Automation Letters}, 
+  title={Towards Better Data Exploitation in Self-Supervised Monocular Depth Estimation}, 
+  year={2024},
+  volume={9},
+  number={1},
+  pages={763-770},
+  doi={10.1109/LRA.2023.3337594}}
 ```
 
 
