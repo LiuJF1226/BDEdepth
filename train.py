@@ -1050,7 +1050,7 @@ class Trainer:
         """Save model weights to disk
         """
 
-        models_dir = os.path.join(self.log_path, "ckpts_each_epoch")
+        models_dir = os.path.join(self.log_path, "models")
         if not os.path.exists(models_dir):
             os.makedirs(models_dir)
         to_save = {}
@@ -1062,21 +1062,20 @@ class Trainer:
         to_save['height'] = self.opt.height
         to_save['width'] = self.opt.width
         to_save['use_stereo'] = self.opt.use_stereo     
+        if ep_end:
+            save_ep_path = os.path.join(models_dir, "model{}.pth".format(self.epoch))
+            torch.save(to_save, save_ep_path)  ## only save the model weights
+            to_save["epoch"] = self.epoch + 1
+        else:
+            to_save["epoch"] = self.epoch 
+            
         to_save['step_in_total'] = self.step
         to_save["batch_idx"] = batch_idx
         to_save['optimizer'] = self.model_optimizer.state_dict()
         to_save['lr_scheduler'] = self.model_lr_scheduler.state_dict()
 
-        save_ep_path = os.path.join(models_dir, "ckpt{}.pth".format(self.epoch))
         save_path = os.path.join(self.log_path, "ckpt.pth")
-        if ep_end:
-            to_save["epoch"] = self.epoch + 1
-            torch.save(to_save, save_ep_path)
-        else:   
-            to_save["epoch"] = self.epoch 
-
-        torch.save(to_save, save_path)
-
+        torch.save(to_save, save_path)  ## also save the optimizer state for resuming
 
     def load_ckpt(self):
         """Load checkpoint to resume a training, used in training process.
