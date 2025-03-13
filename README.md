@@ -4,7 +4,7 @@
 **Towards Better Data Exploitation In Self-Supervised Monocular Depth Estimation**
   [[paper link]](https://arxiv.org/abs/2309.05254)
   
-  Jinfeng Liu, [Lingtong Kong](https://scholar.google.com/citations?hl=zh-CN&user=KKzKc_8AAAAJ), [Jie Yang](http://www.pami.sjtu.edu.cn/jieyang), [Wei Liu](http://www.pami.sjtu.edu.cn/weiliu)
+  [Jinfeng Liu](https://scholar.google.com/citations?hl=en&user=-moPItwAAAAJ), [Lingtong Kong](https://scholar.google.com/citations?hl=zh-CN&user=KKzKc_8AAAAJ), [Jie Yang](http://www.pami.sjtu.edu.cn/jieyang), [Wei Liu](http://www.pami.sjtu.edu.cn/weiliu)
 
   Accepted by IEEE Robotics and Automation Letters (RA-L), 2023
 
